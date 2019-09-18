@@ -1,6 +1,6 @@
 import React from 'react';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { connect } from 'react-redux';
+import { connect, useSelector, useDispatch } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { FlatList } from 'react-native-gesture-handler';
 import * as CartActions from '../../store/modules/cart/actions.js';
@@ -28,17 +28,35 @@ import {
 } from './styles';
 import { formatPrice } from '../../utils/format.js';
 
-function Cart({ cart, total, removeItem, updateAmountRequest }) {
+export default function Cart() {
+  const cart = useSelector(state =>
+    state.cart.map(prod => ({
+      ...prod,
+      subtotal: formatPrice(prod.price * prod.amount),
+    }))
+  );
+
+  const total = useSelector(state =>
+    formatPrice(
+      state.cart.reduce(
+        (total, product) => total + product.price * product.amount,
+        0
+      )
+    )
+  );
+
+  const dispatch = useDispatch();
+
   const increment = product => {
-    updateAmountRequest(product.id, product.amount + 1);
+    dispatch(CartActions.updateAmountRequest(product.id, product.amount + 1));
   };
 
   const decrement = product => {
-    updateAmountRequest(product.id, product.amount - 1);
+    dispatch(CartActions.updateAmountRequest(product.id, product.amount - 1));
   };
 
   const handleRemoveProduct = id => {
-    removeItem(id);
+    dispatch(CartActions.removeItem(id));
   };
 
   const renderCartList = ({ item }) => (
@@ -99,24 +117,3 @@ function Cart({ cart, total, removeItem, updateAmountRequest }) {
     </>
   );
 }
-
-const mapDispatchToProps = dispatch =>
-  bindActionCreators(CartActions, dispatch);
-
-const mapStateToProps = state => ({
-  cart: state.cart.map(prod => ({
-    ...prod,
-    subtotal: formatPrice(prod.price * prod.amount),
-  })),
-  total: formatPrice(
-    state.cart.reduce(
-      (total, product) => total + product.price * product.amount,
-      0
-    )
-  ),
-});
-
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(Cart);
